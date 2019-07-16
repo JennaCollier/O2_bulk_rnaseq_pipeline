@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p short 		# partition name
-#SBATCH -t 0-0:05 		# hours:minutes runlimit
+#SBATCH -t 0-0:03 		# hours:minutes runlimit
 #SBATCH --mem 200MB   # memory requested
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
@@ -15,8 +15,9 @@
 # Use <cat bulk_rnaseq_pipeline.txt | sed -z "s/\n/.out\n/" | less> on the command line to look at standard output
 # Use <cat bulk_rnaseq_pipeline.txt | sed -z "s/\n/.err\n/" | less> on the command line to look at standard error
 echo $SLURM_JOB_ID > bulk_rnaseq_pipeline.txt
+echo $(date) "Created bulk_rnaseq_pipeline.txrt file with SLURM job ID: $SLURM_JOB_ID"
 
-
+echo $(date) "Parsing arguments using getopts..."
 # Use getopts to parse arguments
 while getopts ":b:f:s:x" opt; do
     case "${opt}" in
@@ -24,8 +25,8 @@ while getopts ":b:f:s:x" opt; do
             # Determine output directory 
             baseDir=$OPTARG
             [[ ${baseDir} != */ ]] && baseDir=${baseDir}/ # Assert that the base directory has a '/' at the end; otherwise, add it
-            mkdir -p "${baseDir}" && echo $(date) "Created base project directory: ${baseDir} || echo $(date) "Unable to make base project directory: ${baseDir}"
-            cd "${baseDir}" && echo "Changed to location: "${baseDir}"" # Change to the base directory
+            mkdir -p "${baseDir}" && echo $(date) "Created base project directory: ${baseDir}" || echo $(date) "Unable to make base project directory: ${baseDir}" 1>&2; exit 1
+            cd "${baseDir}" && echo "Changed to location: ${baseDir}" || echo $(date) "Unable to change to base project directory: ${baseDir}" 1>&2; exit 1 # Change to the base directory
             ;;
         f)
             fastaFile=$OPTARG
@@ -33,16 +34,16 @@ while getopts ":b:f:s:x" opt; do
             ;;
         s)
             suffix=$OPTARG
-            echo $(date) "Using ${suffix} for suffix of fasta file"
+            echo $(date) "Using ${suffix} for suffix of fasta file to be removed from subsequent output files"
             ;;
         x)
             species=$OPTARG
-            if [ ${species}=='mouse' ] || [ ${species}=='Mouse' ]; then
+            if [ ${species}=="mouse" ] || [ ${species}=="Mouse" ]; then
                 # directory with the genome and transcriptome index files + name of the gene annotation file
                 genome=/n/groups/shared_databases/igenome/Mus_musculus/NCBI/GRCm38/Sequence/starIndex
                 transcriptome=/n/groups/hbctraining/ngs-data-analysis-longcourse/rnaseq/salmon.ensembl38.idx
                 gtf=/n/groups/shared_databases/igenome/Mus_musculus/NCBI/GRCm38/Annotation/Genes/genes.gtf
-            elif [ ${species}=='human' ] || [ ${species}=='Human' ]; then
+            elif [ ${species}=="human" ] || [ ${species}=="Human" ]; then
                 echo $(date) "Not currently configured for analyzing ${species} fasta file" 1>&2; exit 1
             fi
             echo $(date) "Analyzing ${species} fasta file using parameters at following locations required for STAR alignment:"
@@ -60,18 +61,18 @@ baseFile=`basename ${fastaFile} ${suffix}`
 echo $(date) "Using: ${baseFile} for naming of output files"
 
 # set up output filenames and locations
-align_out=${baseDir}results/star/${baseFile}_aligned
-align_out_bam=${baseDir}results/star/${baseFile}_aligned.sortedByCoord.out.bam
-qualimap_out=${baseDir}results/qualimap/${baseFile}.qualimap
-salmon_out=${baseDir}results/salmon/${baseFile}.salmon
-salmon_mappings=${baseDir}results/salmon/${baseFile}_salmon.out
+align_out="${baseDir}"results/star/${baseFile}_aligned && echo $(date) "Using STAR alignment output file name: ${align_out}"
+align_out_bam="${baseDir}"results/star/${baseFile}_aligned.sortedByCoord.out.bam && echo $(date) "Using STAR alignment output BAM file name: ${align_out_bam}"
+qualimap_out="${baseDir}"results/qualimap/${baseFile}.qualimap && echo $(date) "Using Qualimap output file name: ${qualimap_out}"
+salmon_out="${baseDir}"results/salmon/${baseFile}.salmon && echo $(date) "Using Salmon output file name: ${salmon_out}"
+salmon_mappings="${baseDir}"results/salmon/${baseFile}_salmon.out && echo $(date) "Using Salmon mappings file name: ${salmon_mappings}"
 
 # make all of the output directories
 # The -p option means mkdir will create the whole path if it 
 # does not exist and refrain from complaining if it does exist
-mkdir -p ${baseDir}results/star/ && echo $(date) "Created directory: ${baseDir}results/star/" || echo $(date) "Unable to make directory: ${baseDir}results/star/" 1>&2; exit 1
-mkdir -p ${baseDir}results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2; exit 1
-mkdir -p ${baseDir}results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2; exit 1
+mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir}results/star/" || echo $(date) "Unable to make directory: ${baseDir}results/star/" 1>&2; exit 1
+mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2; exit 1
+mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2; exit 1
 echo $(date) "Generated all project directories sucessfully"
 
 # set up the software environment
