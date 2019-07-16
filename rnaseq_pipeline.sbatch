@@ -93,7 +93,7 @@ echo ""
 echo $(date) "Starting FastQC for ${baseFile}..."
 
 # Run FastQC and move output to the appropriate folder
-/n/data2/mbib/sharpe/jcollier/scripts/fastqc.sh -b ${baseDir} -f ${fastaFile}
+/home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -b ${baseDir} -f ${fastaFile}
 echo $(date) "Completed FastQC for ${baseFile}!"
 
 # Trimmomatic
