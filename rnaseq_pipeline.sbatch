@@ -2,7 +2,8 @@
 
 #SBATCH -p short 		# partition name
 #SBATCH -t 0-0:10 		# hours:minutes runlimit
-#SBATCH --mem 10GB   # memory requested
+#SBATCH --mem 24GB   # memory requested
+#SBATCH -c 8   # cores
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
 #SBATCH -e %j.err 		# File to which standard err will be written
@@ -68,10 +69,12 @@ align_out_bam="${baseDir}"results/star/${baseFile}_aligned.sortedByCoord.out.bam
 qualimap_out="${baseDir}"results/qualimap/${baseFile}.qualimap && echo $(date) "Using Qualimap output file name: ${qualimap_out}"
 salmon_out="${baseDir}"results/salmon/${baseFile}.salmon && echo $(date) "Using Salmon output file name: ${salmon_out}"
 salmon_mappings="${baseDir}"results/salmon/${baseFile}_salmon.out && echo $(date) "Using Salmon mappings file name: ${salmon_mappings}"
+fastqc_outDir="${baseDir}"results/fastqc/ && echo $(date) "Using FastQC directory for ouput: ${fastqc_outDir}"
 
 # make all of the output directories
 # The -p option means mkdir will create the whole path if it 
 # does not exist and refrain from complaining if it does exist
+mkdir -p ${fastqc_outDir} && echo $(date) "Created directory: ${fastqc_outDir}" || echo $(date) "Unable to make directory: ${fastqc_outDir}" 1>&2;
 mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir}results/star/" || echo $(date) "Unable to make directory: ${baseDir}results/star/" 1>&2;
 mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2;
 mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2;
@@ -93,11 +96,11 @@ echo ""
 echo $(date) "Starting FastQC for ${baseFile}..."
 
 # Run FastQC and move output to the appropriate folder
-/home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -b ${baseDir} -f ${fastaFile}
+sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -b ${fastqc_outDir} -f ${fastaFile}
 echo $(date) "Completed FastQC for ${baseFile}!"
 
 # Trimmomatic
-cores=1 # Set number of cores for testing
+cores=8 # Set number of cores for testing
 echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
 
 # Run STAR
