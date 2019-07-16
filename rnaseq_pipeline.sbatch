@@ -23,21 +23,21 @@ while getopts ":b:f:s:x" opt; do
     case "${opt}" in
         b)
             # Determine output directory 
-            baseDir=$OPTARG
+            baseDir="${OPTARG}"
             [[ ${baseDir} != */ ]] && baseDir=${baseDir}/ # Assert that the base directory has a '/' at the end; otherwise, add it
             mkdir -p "${baseDir}" && echo $(date) "Created base project directory: ${baseDir}" || echo $(date) "Unable to make base project directory: ${baseDir}" 1>&2; exit 1
-            cd "${baseDir}" && echo "Changed to location: ${baseDir}" || echo $(date) "Unable to change to base project directory: ${baseDir}" 1>&2; exit 1 # Change to the base directory
+            cd "${baseDir}" && echo "Changed to location: ${baseDir}"
             ;;
         f)
-            fastaFile=$OPTARG
+            fastaFile="${OPTARG}"
             echo $(date) "Using fasta file: ${fastaFile}" 
             ;;
         s)
-            suffix=$OPTARG
+            suffix="${OPTARG}"
             echo $(date) "Using ${suffix} for suffix of fasta file to be removed from subsequent output files"
             ;;
         x)
-            species=$OPTARG
+            species="${OPTARG}"
             if [ ${species}=="mouse" ] || [ ${species}=="Mouse" ]; then
                 # directory with the genome and transcriptome index files + name of the gene annotation file
                 genome=/n/groups/shared_databases/igenome/Mus_musculus/NCBI/GRCm38/Sequence/starIndex
@@ -89,3 +89,37 @@ echo $(date) "Starting QC for ${baseFile}"
 
 # Run FastQC and move output to the appropriate folder
 /n/data2/mbib/sharpe/jcollier/scripts/fastqc.sh -b ${baseDir} -f ${fastaFile}
+
+echo $(date) "Starting STAR alignment for: ${baseFile}"
+cores=1
+
+# Run STAR
+STAR --runThreadN $cores \
+--genomeDir ${genome} \
+--readFilesIn ${fastaFile} \
+--outFileNamePrefix ${align_out} \
+--outSAMtype BAM SortedByCoordinate \
+--outSAMunmapped Within \
+--outSAMattributes Standard
+
+echo $(date) "Starting Qualimap for: ${baseFile}"
+
+# Run Qualimap
+qualimap rnaseq \
+-outdir ${qualimap_out} \
+-a proportional \
+-bam ${align_out_bam} \
+-p strand-specific-reverse \
+-gtf ${gtf} \
+--java-mem-size=8G
+
+# Run salmon
+echo $(date) "Starting Salmon run for: ${baseFile}"
+
+salmon quant -i $transcriptome \
+-p $cores \
+-l A \
+-r $fq \
+-o $salmon_out \
+--seqBias \
+--useVBOpt
