@@ -15,28 +15,14 @@
 echo $SLURM_JOB_ID > fastQC_jobid.txt
 
 # Use getopts to parse arguments
-while getopts ":ho:f:g:" opt; do
+while getopts ":o:f" opt; do
     case ${opt} in
-        h )
-            # Help description of input arguments
-            echo "Usage for STAR genome index generation:"
-            echo "    -h	Display this help message."
-            echo "    -o 	Output file directory."
-            echo "    -f 	Name of fastq file for analysis"
-            exit 0
-            ;;
-        o )
+        o)
             # Produce output directory using the given base directory
-            outDir=$OPTARG && echo $(date) "Results from fastQC will be placed in ${outDir}" || $(date) "Could not identify output directory for fastQC: ${outDir}"; exit 1 
+            outDir=$OPTARG && echo $(date) "Results from fastQC will be placed in ${outDir}" || $(date) "Could not identify output directory for fastQC: ${outDir}"
             ;;
-        f )
-            fqFile=$OPTARG && echo $(date) "Targeting ${fqFile} for fastQC analysis" || $(date) "Could not identify ${fqFile} fastq file for fastQC"; exit 1
-            ;;        
-        \? )
-            echo $(date) "Invalid option for fastQC: $OPTARG" 1>&2; exit 1
-            ;;
-        : )
-            echo $(date) "Invalid option for fastQC: $OPTARG requires an argument" 1>&2; exit 1
+        f)
+            fqFile=$OPTARG && echo $(date) "Targeting ${fqFile} for fastQC analysis" || $(date) "Could not identify ${fqFile} fastq file for fastQC"
             ;;
     esac
 done
