@@ -25,7 +25,7 @@ while getopts ":b:f:s:x" opt; do
             # Determine output directory 
             baseDir="${OPTARG}"
             [[ ${baseDir} != */ ]] && baseDir=${baseDir}/ # Assert that the base directory has a '/' at the end; otherwise, add it
-            mkdir -p "${baseDir}" && echo $(date) "Created base project directory: ${baseDir}" || echo $(date) "Unable to make base project directory: ${baseDir}" 1>&2; exit 1
+            mkdir -p "${baseDir}" && echo $(date) "Created base project directory: ${baseDir}" || echo $(date) "Unable to make base project directory: ${baseDir}"
             cd "${baseDir}" && echo "Changed to location: ${baseDir}"
             ;;
         f)
@@ -44,7 +44,7 @@ while getopts ":b:f:s:x" opt; do
                 transcriptome=/n/groups/hbctraining/ngs-data-analysis-longcourse/rnaseq/salmon.ensembl38.idx
                 gtf=/n/groups/shared_databases/igenome/Mus_musculus/NCBI/GRCm38/Annotation/Genes/genes.gtf
             elif [ ${species}=="human" ] || [ ${species}=="Human" ]; then
-                echo $(date) "Not currently configured for analyzing ${species} fasta file" 1>&2; exit 1
+                echo $(date) "Not currently configured for analyzing ${species} fasta file" 1>&2
             fi
             echo $(date) "Analyzing ${species} fasta file using parameters at following locations required for STAR alignment:"
             echo $(date) "Genome: ${genome}"
@@ -55,6 +55,7 @@ while getopts ":b:f:s:x" opt; do
 done
 # Purge opt arguments
 shift $((OPTIND -1))
+echo $(date) "Parsed arguments!"
 
 # grab base of filename for naming outputs
 baseFile=`basename ${fastaFile} ${suffix}`
@@ -70,9 +71,9 @@ salmon_mappings="${baseDir}"results/salmon/${baseFile}_salmon.out && echo $(date
 # make all of the output directories
 # The -p option means mkdir will create the whole path if it 
 # does not exist and refrain from complaining if it does exist
-mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir}results/star/" || echo $(date) "Unable to make directory: ${baseDir}results/star/" 1>&2; exit 1
-mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2; exit 1
-mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2; exit 1
+mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir}results/star/" || echo $(date) "Unable to make directory: ${baseDir}results/star/" 1>&2;
+mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2;
+mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2;
 echo $(date) "Generated all project directories sucessfully"
 
 # set up the software environment
