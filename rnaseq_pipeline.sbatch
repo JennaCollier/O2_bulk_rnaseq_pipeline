@@ -2,8 +2,8 @@
 
 #SBATCH -p short 		# partition name
 #SBATCH -t 0-0:10 		# hours:minutes runlimit
-#SBATCH --mem 24GB   # memory requested
-#SBATCH -c 8   # cores
+#SBATCH --mem 5GB   # memory requested
+#SBATCH -c 6   # cores
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
 #SBATCH -e %j.err 		# File to which standard err will be written
@@ -11,6 +11,8 @@
 # Script based off of script by HBCtraining, edited by Jenna Lynn Collier 
 # This script takes a fastq file of RNA-seq data, runs FastQC, STAR, Qualimap and Salmon.
 # USAGE: sh rnaseq_analysis_on_input_file.sh <name of fastq file>
+
+cores=6 # Set number of cores for testing
 
 # Generate file containing job ID for later debugging
 # Use <cat bulk_rnaseq_pipeline.txt | sed -z "s/\n/.out\n/" | less> on the command line to look at standard output
@@ -93,14 +95,14 @@ echo ""
 
 echo $(date) "Processing file ${fastaFile}"
 echo ""
-echo $(date) "Starting FastQC for ${baseFile}..."
+echo $(date) "Submitting sbatch FastQC for ${baseFile}..."
 
 # Run FastQC and move output to the appropriate folder
-sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -b ${fastqc_outDir} -f ${fastaFile}
-echo $(date) "Completed FastQC for ${baseFile}!"
+sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
+echo $(date) "Submitted sbatch for ${baseFile}"
 
 # Trimmomatic
-cores=8 # Set number of cores for testing
+
 echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
 
 # Run STAR

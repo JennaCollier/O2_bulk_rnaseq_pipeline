@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH -t 0-00:05                         # Runtime in D-HH:MM format
 #SBATCH -p short                           # Partition to run in
+#SBATCH -c 6                          # Partition to run in
 #SBATCH --mem=500M                         # Memory total in MB (for all cores)-reports in kilobytes
 #SBATCH -o %j.out                 # File to which STDOUT will be written
 #SBATCH -e %j.err
@@ -16,13 +17,13 @@ echo $SLURM_JOB_ID > fastQC_jobid.txt
 
 # Use getopts to parse arguments
 while getopts ":o:f" opt; do
-    case ${opt} in
+    case "${opt}" in
         o)
             # Produce output directory using the given base directory
-            outDir=$OPTARG && echo $(date) "Results from fastQC will be placed in ${outDir}" || $(date) "Could not identify output directory for fastQC: ${outDir}"
+            outDir="${OPTARG}" && echo $(date) "Results from fastQC will be placed in ${outDir}" || $(date) "Could not identify output directory for fastQC: ${outDir}"
             ;;
         f)
-            fqFile=$OPTARG && echo $(date) "Targeting ${fqFile} for fastQC analysis" || $(date) "Could not identify ${fqFile} fastq file for fastQC"
+            fqFile="${OPTARG}" && echo $(date) "Targeting ${fqFile} for fastQC analysis" || $(date) "Could not identify ${fqFile} fastq file for fastQC"
             ;;
     esac
 done
@@ -30,8 +31,8 @@ done
 shift $((OPTIND -1))
 
 # Load required modules
-module load java/jdk-1.8u112
-module load fastqc/0.11.5
+module load fastqc/0.11.5 && echo $(date) "Loaded fastqc module"
 
 # Call fastqc command using output directory targeting fastq file
-fastqc -o ${outDir} ${fqFile}
+fastqc -o ${outDir} -t 6 ${fqFile}
+echo $(date) "Completed ${fqFile} FastQC"
