@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH -p short 		# partition name
-#SBATCH -t 0-0:03 		# hours:minutes runlimit
-#SBATCH --mem 200MB   # memory requested
+#SBATCH -t 0-0:10 		# hours:minutes runlimit
+#SBATCH --mem 10GB   # memory requested
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
 #SBATCH -e %j.err 		# File to which standard err will be written
@@ -40,22 +40,23 @@ while getopts ":b:f:s:x" opt; do
             species="${OPTARG}"
             if [ ${species}=="mouse" ] || [ ${species}=="Mouse" ]; then
                 # directory with the genome and transcriptome index files + name of the gene annotation file
-                genome=/n/groups/shared_databases/igenome/Mus_musculus/NCBI/GRCm38/Sequence/starIndex
-                transcriptome=/n/groups/hbctraining/ngs-data-analysis-longcourse/rnaseq/salmon.ensembl38.idx
-                gtf=/n/groups/shared_databases/igenome/Mus_musculus/NCBI/GRCm38/Annotation/Genes/genes.gtf
+                genome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index # Directory
+                transcriptome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index # Directory
+                gtf=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/annotation/genes.gtf # gtf file
             elif [ ${species}=="human" ] || [ ${species}=="Human" ]; then
                 echo $(date) "Not currently configured for analyzing ${species} fasta file" 1>&2
             fi
             echo $(date) "Analyzing ${species} fasta file using parameters at following locations required for STAR alignment:"
-            echo $(date) "Genome: ${genome}"
-            echo $(date) "Transcriptome: ${transcriptome}"
-            echo $(date) "Gtf annotation: ${gtf}"
+            echo $(date) "Using genome at directory location: ${genome}"
+            echo $(date) "Using transcriptome at directory location: ${transcriptome}"
+            echo $(date) "Using gtf annotation file: ${gtf}"
             ;;            
     esac
 done
 # Purge opt arguments
 shift $((OPTIND -1))
 echo $(date) "Parsed arguments!"
+echo ""
 
 # grab base of filename for naming outputs
 baseFile=`basename ${fastaFile} ${suffix}`
@@ -75,24 +76,29 @@ mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir
 mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2;
 mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2;
 echo $(date) "Generated all project directories sucessfully"
+echo ""
 
 # set up the software environment
 module load fastqc/0.11.3 && echo $(date) "Loaded fastqc/0.11.3 sucessfully"
 module load gcc/6.2.0 && echo $(date) "Loaded gcc/6.2.0 sucessfully"
 module load star/2.7.0a && echo $(date) "Loaded star/2.7.0a sucessfully"
 module load samtools/1.3.1 && echo $(date) "Loaded samtools/1.3.1 sucessfully"
-unset DISPLAY # Necessary for qualimap
-export PATH=/n/app/bcbio/dev/anaconda/bin:$PATH # Necessary for salmon command
+unset DISPLAY && echo $(date) "Unset display as needed for qualimap" # Necessary for qualimap
+export PATH=/n/app/bcbio/dev/anaconda/bin:$PATH && echo $(date) "Exported path for Salmon" # Necessary for salmon command
 echo $(date) "Loaded all modules sucessfully"
+echo ""
 
 echo $(date) "Processing file ${fastaFile}"
-echo $(date) "Starting QC for ${baseFile}"
+echo ""
+echo $(date) "Starting FastQC for ${baseFile}..."
 
 # Run FastQC and move output to the appropriate folder
 /n/data2/mbib/sharpe/jcollier/scripts/fastqc.sh -b ${baseDir} -f ${fastaFile}
+echo $(date) "Completed FastQC for ${baseFile}!"
 
-echo $(date) "Starting STAR alignment for: ${baseFile}"
-cores=1
+# Trimmomatic
+cores=1 # Set number of cores for testing
+echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
 
 # Run STAR
 STAR --runThreadN $cores \
@@ -103,24 +109,28 @@ STAR --runThreadN $cores \
 --outSAMunmapped Within \
 --outSAMattributes Standard
 
-echo $(date) "Starting Qualimap for: ${baseFile}"
+echo $(date) "Completed STAR alignment for: ${baseFile}!"
+echo $(date) "Starting Qualimap for: ${baseFile}..."
 
 # Run Qualimap
 qualimap rnaseq \
 -outdir ${qualimap_out} \
 -a proportional \
 -bam ${align_out_bam} \
--p strand-specific-reverse \
 -gtf ${gtf} \
 --java-mem-size=8G
 
+echo $(date) "Completed Qualimap for: ${baseFile}!"
 # Run salmon
-echo $(date) "Starting Salmon run for: ${baseFile}"
+echo $(date) "Starting Salmon run for: ${baseFile}..."
 
-salmon quant -i $transcriptome \
+salmon quant -i ${transcriptome} \
 -p $cores \
 -l A \
--r $fq \
--o $salmon_out \
+-r ${fastaFile} \
+-o ${salmon_out} \
 --seqBias \
 --useVBOpt
+
+echo $(date) "Completed Salmon run for: ${baseFile}!"
+echo $(date) "Analysis of ${baseFile} complete"
