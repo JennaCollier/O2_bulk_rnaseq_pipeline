@@ -43,13 +43,14 @@ while getopts ":b:f:s:x" opt; do
             species="${OPTARG}"
             if [ "${species}"=="mouse" ] || [ "${species}"=="Mouse" ]; then
                 # directory with the genome and transcriptome index files + name of the gene annotation file
+                echo ${species}
                 genome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index # Directory
                 transcriptome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index # Directory
                 gtf=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/annotation/genes.gtf # gtf file
             elif [ "${species}"=="human" ] || [ "${species}"=="Human" ]; then
                 echo $(date) "Not currently configured for analyzing "${species}" fasta file" 1>&2
             fi
-            echo $(date) "Analyzing "${species}" fasta file using parameters at following locations required for STAR alignment:"
+            echo $(date) "Analyzing ${species} fasta file using parameters at following locations required for STAR alignment:"
             echo $(date) "Using genome at directory location: ${genome}"
             echo $(date) "Using transcriptome at directory location: ${transcriptome}"
             echo $(date) "Using gtf annotation file: ${gtf}"
