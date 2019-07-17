@@ -2,7 +2,7 @@
 
 #SBATCH -p short 		# partition name
 #SBATCH -t 0-0:05 		# hours:minutes runlimit
-#SBATCH --mem 48GB   # memory requested
+#SBATCH --mem 30GB   # memory requested
 #SBATCH -c 6  # cores
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
@@ -42,14 +42,14 @@ while getopts ":b:f:s:x" opt; do
         x)
             species="${OPTARG}"
             if [ "${species}"=="mouse" ] || [ "${species}"=="Mouse" ]; then
-                echo ${species}
-                genome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index # Directory
-                transcriptome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index # Directory
-                gtf=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/annotation/genes.gtf # gtf file
+                echo "${species}"
+                genome="/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index" # Directory
+                transcriptome="/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index" # Directory
+                gtf="/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/annotation/genes.gtf" # gtf file
             elif [ "${species}"=="human" ] || [ "${species}"=="Human" ]; then
                 echo $(date) "Not currently configured for analyzing "${species}" fasta file" 1>&2
             fi
-            echo $(date) "Analyzing ${species} fasta file using parameters at following locations required for STAR alignment:"
+            echo $(date) "Analyzing "${species}" fasta file using parameters at following locations required for STAR alignment:"
             echo $(date) "Using genome at directory location: ${genome}"
             echo $(date) "Using transcriptome at directory location: ${transcriptome}"
             echo $(date) "Using gtf annotation file: ${gtf}"
@@ -60,6 +60,8 @@ done
 shift $((OPTIND -1))
 echo $(date) "Parsed arguments!"
 echo ""
+
+exit 1
 
 # grab base of filename for naming outputs
 baseFile=`basename ${fastaFile} ${suffix}`
@@ -72,6 +74,7 @@ qualimap_out="${baseDir}"results/qualimap/${baseFile}.qualimap && echo $(date) "
 salmon_out="${baseDir}"results/salmon/${baseFile}.salmon && echo $(date) "Using Salmon output file name: ${salmon_out}"
 salmon_mappings="${baseDir}"results/salmon/${baseFile}_salmon.out && echo $(date) "Using Salmon mappings file name: ${salmon_mappings}"
 fastqc_outDir="${baseDir}"results/fastqc/ && echo $(date) "Using FastQC directory for ouput: ${fastqc_outDir}"
+trim_outDir="${baseDir}"results/trimmomatic/ && echo $(date) "Using Trimmomatic directory for ouput: ${trim_outDir}"
 
 # make all of the output directories
 # The -p option means mkdir will create the whole path if it 
@@ -80,6 +83,9 @@ mkdir -p ${fastqc_outDir} && echo $(date) "Created directory: ${fastqc_outDir}" 
 mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir}results/star/" || echo $(date) "Unable to make directory: ${baseDir}results/star/" 1>&2;
 mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2;
 mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2;
+mkdir -p ${trim_outDir} && echo $(date) "Created directory: ${trim_outDir}" || echo $(date) "Unable to make directory: ${trim_outDir}" 1>&2;
+mkdir -p "${trim_outDir}"/logs/ && echo $(date) "Created directory: "${trim_outDir}"/logs/" || echo $(date) "Unable to make directory: "${trim_outDir}"/logs/" 1>&2;
+
 echo $(date) "Generated all project directories sucessfully"
 echo ""
 
@@ -96,13 +102,18 @@ echo ""
 echo $(date) "Processing file ${fastaFile}"
 echo ""
 echo $(date) "Starting FastQC"
-
 # Run FastQC and move output to the appropriate folder
 fastqc -o ${fastqc_outDir} ${fastaFile}
-
 echo $(date) "Completed FastQC"
 
-# Trimmomatic
+# Trimmomatic may or may not work
+java -jar /n/app/trimmomatic/0.36/bin/trimmomatic-0.36.jar SE \
+-threads 6 \
+-phred33 \
+-trimlog "${trim_outDir}"/logs/${baseFile}.txt \
+${fastaFile} \
+${trim_outDir}/${baseFile}.fq.gz \
+ILLUMINACLIP:/n/app/trimmomatic/0.36/bin/adapters/TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
 
 echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
 
