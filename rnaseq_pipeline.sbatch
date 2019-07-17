@@ -2,7 +2,7 @@
 
 #SBATCH -p short 		# partition name
 #SBATCH -t 0-0:05 		# hours:minutes runlimit
-#SBATCH --mem 2GB   # memory requested
+#SBATCH --mem 48GB   # memory requested
 #SBATCH -c 6  # cores
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
@@ -42,7 +42,6 @@ while getopts ":b:f:s:x" opt; do
         x)
             species="${OPTARG}"
             if [ "${species}"=="mouse" ] || [ "${species}"=="Mouse" ]; then
-                # directory with the genome and transcriptome index files + name of the gene annotation file
                 echo ${species}
                 genome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index # Directory
                 transcriptome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index # Directory
