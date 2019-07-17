@@ -98,7 +98,7 @@ echo ""
 echo $(date) "Submitting sbatch FastQC for ${baseFile}..."
 
 # Run FastQC and move output to the appropriate folder
-sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
+sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o "${fastqc_outDir}" -f "${fastaFile}"
 echo $(date) "Submitted sbatch for ${baseFile}"
 
 # Trimmomatic

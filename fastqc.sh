@@ -19,16 +19,19 @@ echo $SLURM_JOB_ID > fastQC_jobid.txt
 while getopts ":o:f" opt; do
     case "${opt}" in
         o)
-            # Produce output directory using the given base directory
-            outDir="${OPTARG}" && echo $(date) "Results from fastQC will be placed in ${outDir}" || $(date) "Could not identify output directory for fastQC: ${outDir}"
+            # Determine output directory 
+            outDir="${OPTARG}"
+            echo $(date) "Using output directory: ${outDir}"
             ;;
         f)
-            fqFile="${OPTARG}" && echo $(date) "Targeting ${fqFile} for fastQC analysis" || $(date) "Could not identify ${fqFile} fastq file for fastQC"
-            ;;
+            fqFile="${OPTARG}"
+            echo $(date) "Using fasta file: ${fqFile}" 
+            ;;       
     esac
 done
 # Purge opt arguments
 shift $((OPTIND -1))
+echo $(date) "Parsed arguments!"
 
 # Load required modules
 module load fastqc/0.11.5 && echo $(date) "Loaded fastqc module"
