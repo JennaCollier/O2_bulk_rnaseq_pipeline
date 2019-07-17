@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p short 		# partition name
-#SBATCH -t 0-0:15 		# hours:minutes runlimit
+#SBATCH -t 0-0:20 		# hours:minutes runlimit
 #SBATCH --mem 30GB   # memory requested
 #SBATCH -c 6  # cores
 #SBATCH --job-name bulk_RNA 		# Job name
@@ -65,8 +65,8 @@ baseFile=`basename ${fastaFile} ${suffix}`
 echo $(date) "Using: ${baseFile} for naming of output files"
 
 # set up output filenames and locations
-align_out="${baseDir}"results/star/${baseFile}_aligned && echo $(date) "Using STAR alignment output file name: ${align_out}"
-align_out_bam="${baseDir}"results/star/${baseFile}_aligned.sortedByCoord.out.bam && echo $(date) "Using STAR alignment output BAM file name: ${align_out_bam}"
+align_out="${baseDir}"results/star/${baseFile}. && echo $(date) "Using STAR alignment output file name: ${align_out}"
+align_out_bam="${baseDir}"results/star/${baseFile}.Aligned.sortedByCoord.out.bam && echo $(date) "Using STAR alignment output BAM file name: ${align_out_bam}"
 qualimap_out="${baseDir}"results/qualimap/${baseFile}.qualimap && echo $(date) "Using Qualimap output file name: ${qualimap_out}"
 salmon_out="${baseDir}"results/salmon/${baseFile}.salmon && echo $(date) "Using Salmon output file name: ${salmon_out}"
 salmon_mappings="${baseDir}"results/salmon/${baseFile}_salmon.out && echo $(date) "Using Salmon mappings file name: ${salmon_mappings}"
@@ -97,20 +97,20 @@ echo ""
 
 echo $(date) "Processing file ${fastaFile}"
 echo ""
-echo $(date) "Submitting sbatch for FastQC"
-# Run FastQC and move output to the appropriate folder
+echo -n $(date) "Submitting sbatch for FastQC: "
+# Submit sbatch for FastQC
 sbatch /n/data2/hms/mbib/sharpe/jcollier/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
-echo $(date) "Completed sbatch submission for FastQC"
 
 echo ""
 echo $(date) "Starting Trimmomatic"
 # Trimmomatic may or may not work
-java -jar /n/app/trimmomatic/0.36/bin/trimmomatic-0.36.jar SE \
+java -verbose \
+-jar /n/app/trimmomatic/0.36/bin/trimmomatic-0.36.jar SE \
 -threads $cores \
 -phred33 \
 -trimlog "${trim_outDir}"/logs/${baseFile}.txt \
 ${fastaFile} \
-${trim_outDir}/${baseFile}.fq.gz \
+${trim_outDir}/${baseFile}.fq \
 ILLUMINACLIP:/n/app/trimmomatic/0.36/bin/adapters/TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
 echo $(date) "Completed Trimmomatic"
 echo ""
@@ -120,15 +120,19 @@ echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
 # Run STAR
 STAR --runThreadN $cores \
 --genomeDir ${genome} \
---readFilesIn ${fastaFile} \
+--sjdbGTFfile ${gtf} \
+--readFilesIn ${trim_outDir}/${baseFile}.fq \
 --outFileNamePrefix ${align_out} \
 --outSAMtype BAM SortedByCoordinate \
 --outSAMunmapped Within \
---outSAMattributes Standard
+--outSAMattributes NH HI NM MD AS \
+--outReadsUnmapped Fastx \
+--quantMode GeneCounts
 
-echo $(date) "Completed STAR alignment for: ${baseFile}"
+echo $(date) "Completed STAR alignment for: ${trim_outDir}/${baseFile}.fq"
 echo ""
-echo $(date) "Starting Qualimap for: ${baseFile}..."
+echo $(date) "Starting Qualimap..."
+echo $(date) "Starting Qualimap..."
 
 # Run Qualimap
 qualimap rnaseq \
@@ -138,18 +142,20 @@ qualimap rnaseq \
 -gtf ${gtf} \
 --java-mem-size=10G
 
-echo $(date) "Completed Qualimap for: ${baseFile}!"
+echo $(date) "Completed Qualimap!"
 echo ""
 # Run salmon
 echo $(date) "Starting Salmon run for: ${baseFile}..."
+echo $(date) "Starting Salmon run for: ${baseFile}..."
 
-salmon quant -i ${transcriptome} \
+salmon quant -i ${transcriptome}\
 -p $cores \
 -l A \
 -r ${fastaFile} \
 -o ${salmon_out} \
 --seqBias \
---useVBOpt
+--useVBOpt \
+--validateMappings
 
 echo $(date) "Completed Salmon run for: ${baseFile}!"
 echo ""
