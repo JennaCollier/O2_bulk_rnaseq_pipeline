@@ -95,11 +95,12 @@ echo ""
 
 echo $(date) "Processing file ${fastaFile}"
 echo ""
-echo $(date) "Submitting sbatch FastQC: sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o "${fastqc_outDir}" -f "${fastaFile}""
+echo $(date) "Starting FastQC"
 
 # Run FastQC and move output to the appropriate folder
-sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o "${fastqc_outDir}" -f "${fastaFile}"
-echo $(date) "Submitted sbatch for ${baseFile}"
+fastqc -o ${fastqc_outDir} ${fastaFile}
+
+echo $(date) "Completed FastQC"
 
 # Trimmomatic
 
