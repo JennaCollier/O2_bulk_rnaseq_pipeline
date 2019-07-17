@@ -12,7 +12,7 @@
 # This script takes a fastq file of RNA-seq data, runs FastQC, STAR, Qualimap and Salmon.
 # USAGE: sh rnaseq_analysis_on_input_file.sh <name of fastq file>
 
-debug=true
+debug=false # Set to true when NOT debugging
 cores=6 # Set number of cores for testing
 
 # Generate file containing job ID for later debugging
@@ -102,7 +102,7 @@ echo -n $(date) "Submitting sbatch for FastQC: "
 # Submit sbatch for FastQC
 sbatch /n/data2/hms/mbib/sharpe/jcollier/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
 
-if [ "$debug"==false ]; then
+if $debug; then
     echo ""
     echo $(date) "Starting Trimmomatic"
     # Trimmomatic may or may not work
@@ -151,7 +151,7 @@ echo ""
 echo $(date) "Starting Salmon run for: ${baseFile}..."
 echo $(date) "Starting Salmon run for: ${baseFile}..."
 
-salmon quant -i ${transcriptome}\
+salmon quant -i ${transcriptome} \
 -p $cores \
 -l A \
 -r ${fastaFile} \
