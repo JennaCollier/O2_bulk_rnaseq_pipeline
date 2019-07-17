@@ -22,7 +22,7 @@ echo $(date) "Created bulk_rnaseq_pipeline.txrt file with SLURM job ID: $SLURM_J
 
 echo $(date) "Parsing arguments using getopts..."
 # Use getopts to parse arguments
-while getopts ":b:f:s:x" opt; do
+while getopts "b:f:s:x:" opt; do
     case "${opt}" in
         b)
             # Determine output directory 
@@ -42,7 +42,6 @@ while getopts ":b:f:s:x" opt; do
         x)
             species="${OPTARG}"
             if [ "${species}"=="mouse" ] || [ "${species}"=="Mouse" ]; then
-                echo "${species}"
                 genome="/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index" # Directory
                 transcriptome="/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index" # Directory
                 gtf="/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/annotation/genes.gtf" # gtf file
@@ -60,8 +59,6 @@ done
 shift $((OPTIND -1))
 echo $(date) "Parsed arguments!"
 echo ""
-
-exit 1
 
 # grab base of filename for naming outputs
 baseFile=`basename ${fastaFile} ${suffix}`

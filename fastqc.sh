@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -t 0-00:05                         # Runtime in D-HH:MM format
+#SBATCH -t 0-00:01                         # Runtime in D-HH:MM format
 #SBATCH -p short                           # Partition to run in
-#SBATCH -c 1                          # Partition to run in
+#SBATCH -c 4                          # Partition to run in
 #SBATCH --mem=500M                         # Memory total in MB (for all cores)-reports in kilobytes
 #SBATCH -o %j.out                 # File to which STDOUT will be written
 #SBATCH -e %j.err
@@ -15,11 +15,8 @@
 # Use <cat fastQC_jobid.txt | sed -z "s/\n/.err\n/" | less> on the command line to look at standard error
 echo $SLURM_JOB_ID > fastQC_jobid.txt
 
-export DISPLAY=:0
-echo $(date) "Unset display as needed" # Necessary
-
 # Use getopts to parse arguments
-while getopts ":o:f" opt; do
+while getopts "o:f:" opt; do
     case "${opt}" in
         o)
             # Determine output directory 
@@ -40,5 +37,5 @@ echo $(date) "Parsed arguments!"
 module load fastqc/0.11.5 && echo $(date) "Loaded fastqc module"
 
 # Call fastqc command using output directory targeting fastq file
-fastqc -o ${outDir} ${fqFile}
+fastqc -o ${outDir} -t 4 ${fqFile}
 echo $(date) "Completed ${fqFile} FastQC"
