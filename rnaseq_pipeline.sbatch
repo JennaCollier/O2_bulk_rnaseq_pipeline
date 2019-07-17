@@ -99,7 +99,7 @@ echo $(date) "Processing file ${fastaFile}"
 echo ""
 echo $(date) "Submitting sbatch for FastQC"
 # Run FastQC and move output to the appropriate folder
-/n/data2/hms/mbib/sharpe/jcollier/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
+sbatch /n/data2/hms/mbib/sharpe/jcollier/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
 echo $(date) "Completed sbatch submission for FastQC"
 
 echo ""
