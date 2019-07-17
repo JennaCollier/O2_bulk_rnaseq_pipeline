@@ -32,6 +32,7 @@ done
 # Purge opt arguments
 shift $((OPTIND -1))
 echo $(date) "Parsed arguments!"
+echo ""
 
 # Load required modules
 module load fastqc/0.11.5 && echo $(date) "Loaded fastqc module"
