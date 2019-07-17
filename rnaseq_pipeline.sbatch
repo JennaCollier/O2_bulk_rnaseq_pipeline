@@ -87,7 +87,6 @@ echo $(date) "Generated all project directories sucessfully"
 echo ""
 
 # set up the software environment
-module load fastqc/0.11.3 && echo $(date) "Loaded fastqc/0.11.3 sucessfully"
 module load gcc/6.2.0 && echo $(date) "Loaded gcc/6.2.0 sucessfully"
 module load star/2.7.0a && echo $(date) "Loaded star/2.7.0a sucessfully"
 module load samtools/1.3.1 && echo $(date) "Loaded samtools/1.3.1 sucessfully"
