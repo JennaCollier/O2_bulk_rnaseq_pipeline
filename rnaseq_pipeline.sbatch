@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p short 		# partition name
-#SBATCH -t 0-0:20 		# hours:minutes runlimit
+#SBATCH -t 0-0:05 		# hours:minutes runlimit
 #SBATCH --mem 30GB   # memory requested
 #SBATCH -c 6  # cores
 #SBATCH --job-name bulk_RNA 		# Job name
@@ -12,6 +12,7 @@
 # This script takes a fastq file of RNA-seq data, runs FastQC, STAR, Qualimap and Salmon.
 # USAGE: sh rnaseq_analysis_on_input_file.sh <name of fastq file>
 
+debug=true
 cores=6 # Set number of cores for testing
 
 # Generate file containing job ID for later debugging
@@ -81,7 +82,7 @@ mkdir -p "${baseDir}"results/star/ && echo $(date) "Created directory: ${baseDir
 mkdir -p "${baseDir}"results/qualimap/ && echo $(date) "Created directory: ${baseDir}results/qualimap/" || echo $(date) "Unable to make directory: ${baseDir}results/qualimap/" 1>&2;
 mkdir -p "${baseDir}"results/salmon/ && echo $(date) "Created directory: ${baseDir}results/salmon/" || echo $(date) "Unable to make directory: ${baseDir}results/salmon/" 1>&2;
 mkdir -p ${trim_outDir} && echo $(date) "Created directory: ${trim_outDir}" || echo $(date) "Unable to make directory: ${trim_outDir}" 1>&2;
-mkdir -p "${trim_outDir}"/logs/ && echo $(date) "Created directory: "${trim_outDir}"/logs/" || echo $(date) "Unable to make directory: "${trim_outDir}"/logs/" 1>&2;
+mkdir -p "${trim_outDir}"logs/ && echo $(date) "Created directory: "${trim_outDir}"/logs/" || echo $(date) "Unable to make directory: "${trim_outDir}"/logs/" 1>&2;
 
 echo $(date) "Generated all project directories sucessfully"
 echo ""
@@ -101,48 +102,50 @@ echo -n $(date) "Submitting sbatch for FastQC: "
 # Submit sbatch for FastQC
 sbatch /n/data2/hms/mbib/sharpe/jcollier/scripts/bulk_rnaseq_pipeline/fastqc.sh -o ${fastqc_outDir} -f ${fastaFile}
 
-echo ""
-echo $(date) "Starting Trimmomatic"
-# Trimmomatic may or may not work
-java -verbose \
--jar /n/app/trimmomatic/0.36/bin/trimmomatic-0.36.jar SE \
--threads $cores \
--phred33 \
--trimlog "${trim_outDir}"/logs/${baseFile}.txt \
-${fastaFile} \
-${trim_outDir}/${baseFile}.fq \
-ILLUMINACLIP:/n/app/trimmomatic/0.36/bin/adapters/TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
-echo $(date) "Completed Trimmomatic"
-echo ""
+if [ "$debug"==false ]; then
+    echo ""
+    echo $(date) "Starting Trimmomatic"
+    # Trimmomatic may or may not work
+    java -verbose \
+    -jar /n/app/trimmomatic/0.36/bin/trimmomatic-0.36.jar SE \
+    -threads $cores \
+    -phred33 \
+    -trimlog "${trim_outDir}"logs/${baseFile}.log \
+    ${fastaFile} \
+    ${trim_outDir}${baseFile}.fq \
+    ILLUMINACLIP:/n/app/trimmomatic/0.36/bin/adapters/TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+    echo $(date) "Completed Trimmomatic"
+    echo ""
 
-echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
+    echo $(date) "Starting STAR alignment for: ${baseFile} using $cores cores"
 
-# Run STAR
-STAR --runThreadN $cores \
---genomeDir ${genome} \
---sjdbGTFfile ${gtf} \
---readFilesIn ${trim_outDir}/${baseFile}.fq \
---outFileNamePrefix ${align_out} \
---outSAMtype BAM SortedByCoordinate \
---outSAMunmapped Within \
---outSAMattributes NH HI NM MD AS \
---outReadsUnmapped Fastx \
---quantMode GeneCounts
+    # Run STAR
+    STAR --runThreadN $cores \
+    --genomeDir ${genome} \
+    --sjdbGTFfile ${gtf} \
+    --readFilesIn ${trim_outDir}${baseFile}.fq \
+    --outFileNamePrefix ${align_out} \
+    --outSAMtype BAM SortedByCoordinate \
+    --outSAMunmapped Within \
+    --outSAMattributes NH HI NM MD AS \
+    --outReadsUnmapped Fastx \
+    --quantMode GeneCounts
 
-echo $(date) "Completed STAR alignment for: ${trim_outDir}/${baseFile}.fq"
-echo ""
-echo $(date) "Starting Qualimap..."
-echo $(date) "Starting Qualimap..."
+    echo $(date) "Completed STAR alignment for: ${trim_outDir}/${baseFile}.fq"
+    echo ""
+    echo $(date) "Starting Qualimap..."
+    echo $(date) "Starting Qualimap..."
 
-# Run Qualimap
-qualimap rnaseq \
--outdir ${qualimap_out} \
--a proportional \
--bam ${align_out_bam} \
--gtf ${gtf} \
---java-mem-size=10G
+    # Run Qualimap
+    qualimap rnaseq \
+    -outdir ${qualimap_out} \
+    -a proportional \
+    -bam ${align_out_bam} \
+    -gtf ${gtf} \
+    --java-mem-size=10G
 
-echo $(date) "Completed Qualimap!"
+    echo $(date) "Completed Qualimap!"
+fi
 echo ""
 # Run salmon
 echo $(date) "Starting Salmon run for: ${baseFile}..."
