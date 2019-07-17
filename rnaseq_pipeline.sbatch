@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH -p short 		# partition name
-#SBATCH -t 0-0:10 		# hours:minutes runlimit
-#SBATCH --mem 5GB   # memory requested
-#SBATCH -c 6   # cores
+#SBATCH -t 0-0:05 		# hours:minutes runlimit
+#SBATCH --mem 2GB   # memory requested
+#SBATCH -c 6  # cores
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
 #SBATCH -e %j.err 		# File to which standard err will be written
@@ -41,15 +41,15 @@ while getopts ":b:f:s:x" opt; do
             ;;
         x)
             species="${OPTARG}"
-            if [ ${species}=="mouse" ] || [ ${species}=="Mouse" ]; then
+            if [ "${species}"=="mouse" ] || [ "${species}"=="Mouse" ]; then
                 # directory with the genome and transcriptome index files + name of the gene annotation file
                 genome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/star_index # Directory
                 transcriptome=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/sequence/salmon_index # Directory
                 gtf=/n/data2/hms/mbib/sharpe/genomes/mus_musculus/ensembl/GRCm38/annotation/genes.gtf # gtf file
-            elif [ ${species}=="human" ] || [ ${species}=="Human" ]; then
-                echo $(date) "Not currently configured for analyzing ${species} fasta file" 1>&2
+            elif [ "${species}"=="human" ] || [ "${species}"=="Human" ]; then
+                echo $(date) "Not currently configured for analyzing "${species}" fasta file" 1>&2
             fi
-            echo $(date) "Analyzing ${species} fasta file using parameters at following locations required for STAR alignment:"
+            echo $(date) "Analyzing "${species}" fasta file using parameters at following locations required for STAR alignment:"
             echo $(date) "Using genome at directory location: ${genome}"
             echo $(date) "Using transcriptome at directory location: ${transcriptome}"
             echo $(date) "Using gtf annotation file: ${gtf}"
@@ -95,7 +95,7 @@ echo ""
 
 echo $(date) "Processing file ${fastaFile}"
 echo ""
-echo $(date) "Submitting sbatch FastQC for ${baseFile}..."
+echo $(date) "Submitting sbatch FastQC: sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o "${fastqc_outDir}" -f "${fastaFile}""
 
 # Run FastQC and move output to the appropriate folder
 sbatch /home/jc605/scripts/bulk_rnaseq_pipeline/fastqc.sh -o "${fastqc_outDir}" -f "${fastaFile}"
@@ -123,7 +123,7 @@ qualimap rnaseq \
 -a proportional \
 -bam ${align_out_bam} \
 -gtf ${gtf} \
---java-mem-size=8G
+--java-mem-size=10G
 
 echo $(date) "Completed Qualimap for: ${baseFile}!"
 # Run salmon

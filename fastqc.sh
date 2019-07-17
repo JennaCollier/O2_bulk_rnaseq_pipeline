@@ -15,6 +15,8 @@
 # Use <cat fastQC_jobid.txt | sed -z "s/\n/.err\n/" | less> on the command line to look at standard error
 echo $SLURM_JOB_ID > fastQC_jobid.txt
 
+unset DISPLAY && echo $(date) "Unset display as needed" # Necessary
+
 # Use getopts to parse arguments
 while getopts ":o:f" opt; do
     case "${opt}" in
