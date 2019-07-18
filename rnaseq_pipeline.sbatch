@@ -2,7 +2,7 @@
 
 #SBATCH -p short 		# partition name
 #SBATCH -t 0-0:05 		# hours:minutes runlimit
-#SBATCH --mem 30GB   # memory requested
+#SBATCH --mem 5GB   # memory requested
 #SBATCH -c 6  # cores
 #SBATCH --job-name bulk_RNA 		# Job name
 #SBATCH -o %j.out			# File to which standard out will be written
@@ -12,14 +12,14 @@
 # This script takes a fastq file of RNA-seq data, runs FastQC, STAR, Qualimap and Salmon.
 # USAGE: sh rnaseq_analysis_on_input_file.sh <name of fastq file>
 
+# for fid in /n/data2/hms/mbib/sharpe/jcollier/jc011/data/*; do sbatch rnaseq_pipeline.sbatch -b /n/scratch2/jc605/jc007 -f /$fid -s .fastq -x mouse; done
+
 debug=false # Set to true when NOT debugging
 cores=6 # Set number of cores for testing
 
 # Generate file containing job ID for later debugging
 # Use <cat bulk_rnaseq_pipeline.txt | sed -z "s/\n/.out\n/" | less> on the command line to look at standard output
 # Use <cat bulk_rnaseq_pipeline.txt | sed -z "s/\n/.err\n/" | less> on the command line to look at standard error
-echo $SLURM_JOB_ID > bulk_rnaseq_pipeline.txt
-echo $(date) "Created bulk_rnaseq_pipeline.txrt file with SLURM job ID: $SLURM_JOB_ID"
 
 echo $(date) "Parsing arguments using getopts..."
 # Use getopts to parse arguments
@@ -64,6 +64,9 @@ echo ""
 # grab base of filename for naming outputs
 baseFile=`basename ${fastaFile} ${suffix}`
 echo $(date) "Using: ${baseFile} for naming of output files"
+
+echo $SLURM_JOB_ID > ${baseFile}.txt
+echo $(date) "Created ${baseFile}.txt file with SLURM job ID: $SLURM_JOB_ID"
 
 # set up output filenames and locations
 align_out="${baseDir}"results/star/${baseFile}. && echo $(date) "Using STAR alignment output file name: ${align_out}"
@@ -159,6 +162,11 @@ salmon quant -i ${transcriptome} \
 --seqBias \
 --useVBOpt \
 --validateMappings
+
+# Change the names of the quant files to the original sample name
+for fid in `basename -a "${baseDir}"results/salmon/*`; do 
+    mv "${baseDir}results/salmon/$fid/quant.sf" "${baseDir}results/salmon/$fid/$fid.quant.sf"; 
+done
 
 echo $(date) "Completed Salmon run for: ${baseFile}!"
 echo ""

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -t 0-00:01                         # Runtime in D-HH:MM format
+#SBATCH -t 0-00:02                         # Runtime in D-HH:MM format
 #SBATCH -p short                           # Partition to run in
 #SBATCH -c 4                          # Partition to run in
 #SBATCH --mem=500M                         # Memory total in MB (for all cores)-reports in kilobytes
